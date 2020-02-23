@@ -15,7 +15,8 @@ class cmsUploadPhoto {
 
     private static $instance;
 
-	public $upload_dir    = '';			// директория загрузки
+    public $upload_url    = '';			// относительные путь загрузки
+	public $upload_dir    = '';			// директория загрузки (абсолютный)
 	public $filename      = '';	        // имя файла
 	public $small_size_w  = 96;	    	// ширина миниатюры
 	public $small_size_h  = '';			// высота миниатюры
@@ -71,8 +72,6 @@ class cmsUploadPhoto {
 			$uploadphoto 		   = $this->upload_dir . $this->filename;
 			$uploadthumb['small']  = $this->upload_dir . $this->dir_small . $this->filename;
 			$uploadthumb['medium'] = $this->upload_dir . $this->dir_medium . $this->filename;
-
-			$uploadphoto 		   = $this->upload_dir . $this->filename;
 
 			$source				   = $_FILES[$this->input_name]['tmp_name'];
 			$errorCode			   = $_FILES[$this->input_name]['error'];
@@ -154,6 +153,141 @@ class cmsUploadPhoto {
         return true;
 
     }
+
+    /**
+     * Загружает файл на сервер
+     * @param string $post_filename Название поля с файлом в массиве $_FILES
+     * @param string $allowed_ext Список допустимых расширений (через запятую)
+     * @return array
+     */
+    public function upload($post_filename, $allowed_ext = false){
+
+        if ($this->isUploadedXHR($post_filename)){
+            return $this->uploadXHR($post_filename, $allowed_ext);
+        }
+
+        return array(
+            'success' => false,
+            'error' => 'UPLOAD_ERR_NO_FILE'
+        );
+
+    }
+    
+    public function isUploadedXHR($name){
+        return isset($_GET['qqfile']);
+    }
+    
 // ============================================================================ //
+//============================================================================//
+
+    /**
+     * Загружает файл на сервер переданный через XHR
+     * @param string $post_filename Название поля с файлом в массиве $_GET
+     * @param string $allowed_ext Список допустимых расширений (через запятую)
+     * @return array
+     */
+    public function uploadXHR($post_filename, $allowed_ext = false){
+
+        $dest_name  = $this->files_sanitize_name($_GET['qqfile']);
+        $dest_info  = pathinfo($dest_name);
+        $dest_ext   = $dest_info['extension'];
+        
+        $dest_size  = 10;
+
+        if ($allowed_ext !== false){
+            $allowed_ext = explode(",", $allowed_ext);
+            foreach($allowed_ext as $idx=>$ext){ $allowed_ext[$idx] = trim($ext); }
+            if (!in_array($dest_ext, $allowed_ext)){
+                return array(
+                    'error' => 'UPLOAD_ERR_MIME',
+                    'success' => false,
+                    'name' => $dest_name
+                );
+            }
+        }
+
+        $this->filename 	   = $this->filename ? $this->filename : md5(time().$dest_info['basename']) . '.' . $dest_ext;
+
+        $uploadphoto 	       = $this->upload_dir . $this->filename;
+        $uploadthumb['small']  = $this->upload_dir . $this->dir_small . $this->filename;
+        $uploadthumb['medium'] = $this->upload_dir . $this->dir_medium . $this->filename;
+
+        $input = fopen("php://input", "r");
+        $temp = tmpfile();
+        $realSize = stream_copy_to_stream($input, $temp);
+        fclose($input);
+
+        if ($realSize != $this->getXHRFileSize()){
+            return array(
+                'success' => false,
+                'error' => 'UPLOAD_ERR_PARTIAL',
+                'name' => $dest_name,
+                'path' => ''
+            );
+        }
+
+        $target = fopen($uploadphoto, "w");
+        fseek($temp, 0, SEEK_SET);
+        stream_copy_to_stream($temp, $target);
+        fclose($target);
+        
+        cmsCore::includeGraphics();
+        
+        if (!$this->small_size_h) { $this->small_size_h = $this->small_size_w; }
+        if (!$this->medium_size_h) { $this->medium_size_h = $this->medium_size_w; }
+
+        //Генерируем маленькое и среднее изображения
+        if(!$this->only_medium){
+            if(!is_dir($this->upload_dir . $this->dir_small)) { @mkdir($this->upload_dir . $this->dir_small); }
+            @img_resize($uploadphoto, $uploadthumb['small'], $this->small_size_w, $this->small_size_h, $this->thumbsqr);
+        }
+        
+        if(!is_dir($this->upload_dir . $this->dir_medium)) { @mkdir($this->upload_dir . $this->dir_medium); }
+        @img_resize($uploadphoto, $uploadthumb['medium'], $this->medium_size_w, $this->medium_size_h, false, false);
+
+        // Накладывать ватермарк
+        if($this->is_watermark) { @img_add_watermark($uploadthumb['medium']); }
+
+        // сохранять оригинал
+        if(!$this->is_saveorig) { @unlink($uploadphoto); } elseif($this->is_watermark) { @img_add_watermark($uploadphoto); }
+
+        return array(
+            'success'  => true,
+            'path'     => $uploadphoto,
+            'url'      =>  $this->upload_url. $this->dir_small . $this->filename,
+            'name'     => $dest_name,
+            'size'     => $dest_size,
+            'imageurl' => $this->filename
+        );
+
+    }
+
+    public function getXHRFileSize(){
+        if (isset($_SERVER["CONTENT_LENGTH"])){
+            return (int)$_SERVER["CONTENT_LENGTH"];
+        } else {
+            return false;
+        }
+    }
+    
+    /**
+     * Очищает имя файла от специальных символов
+     *
+     * @param string $filename
+     * @return string
+     */
+    public function files_sanitize_name($filename){
+
+        $filename = mb_strtolower($filename);
+        $filename = preg_replace(array('/[\&]/', '/[\@]/', '/[\#]/'), array('-and-', '-at-', '-number-'), $filename);
+        $filename = preg_replace('/[^(\x20-\x7F)]*/','', $filename);
+        $filename = str_replace(' ', '-', $filename);
+        $filename = str_replace('\'', '', $filename);
+        $filename = preg_replace('/[^\w\-\.]+/', '', $filename);
+        $filename = preg_replace('/[\-]+/', '-', $filename);
+
+        return $filename;
+
+    }
 
 }
