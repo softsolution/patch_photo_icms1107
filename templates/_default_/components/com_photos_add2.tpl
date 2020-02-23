@@ -26,7 +26,7 @@
         <div id="photos-uploader"></div>
 
         <div id="savenext">
-            После загрузки файлов <a href="/photos/{$album.id}/uploaded.html">продолжить</a>
+            После загрузки файлов <a href="/photos/{$album.id}">продолжить</a>
         </div>
 
         {literal}

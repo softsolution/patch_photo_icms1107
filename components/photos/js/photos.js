@@ -101,6 +101,7 @@ function createUploader(upload_url, sess_id){
 		debug: false,
 		params: {sess_id: sess_id},
 		onComplete: function(id, file_name, result) {
+console.log(result);
 			if (!result.success) { return; }
 			var widget = $('#album-photos-widget');
 			var preview_block = $('.preview_template', widget).clone().removeClass('preview_template').addClass('preview').attr('rel', result.id).show();
@@ -111,6 +112,10 @@ function createUploader(upload_url, sess_id){
 			});
 
 			$('.previews_list', widget).append(preview_block);
+
+			if(result.is_limit){
+				window.location.href = '/photos/'+result.album_id;
+			}
 
 		}
 

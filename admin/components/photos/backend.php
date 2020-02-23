@@ -51,15 +51,27 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 //=================================================================================================//
 //=================================================================================================//
 
-	if ($opt=='list_albums'){
+	if ($opt=='list_albums'|| $opt=='list_photos' || $opt=='add_photo_multi' || $opt=='add_photo_multi_step2'){
 
         $toolmenu[] = array('icon'=>'newfolder.gif', 'title'=>$_LANG['AD_ALBUM_ADD'], 'link'=>'?view=components&do=config&id='.$id.'&opt=add_album');
+        $toolmenu[] = array('icon'=>'newphoto.gif', 'title' => 'Новая фотография', 'link' => '?view=components&do=config&id='.$id.'&opt=add_photo');
+	    $toolmenu[] = array('icon'=>'newphotomulti.gif', 'title' => 'Массовая загрузка фото', 'link' => '?view=components&do=config&id='.$id.'&opt=add_photo_multi');
         $toolmenu[] = array('icon'=>'folders.gif', 'title'=>$_LANG['AD_ALBUMS'], 'link'=>'?view=components&do=config&id='.$id.'&opt=list_albums');
+        $toolmenu[] = array('icon'=>'listphoto.gif', 'title' => 'Все фотографии', 'link'=>'?view=components&do=config&id='.$id.'&opt=list_photos');
         $toolmenu[] = array('icon'=>'config.gif', 'title'=>$_LANG['AD_SETTINGS'], 'link'=>'?view=components&do=config&id='.$id.'&opt=config');
 
 	}
 
-	if (in_array($opt, array('config','add_album','edit_album'))){
+	if($opt=='list_photos'){
+
+        $toolmenu[] = array('icon'=>'edit.gif', 'title' => 'Редактировать выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=edit_photo&multiple=1');");
+        $toolmenu[] = array('icon'=>'delete.gif', 'title' => 'Удалить выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=delete_photo&multiple=1');");
+        $toolmenu[] = array('icon'=>'show.gif', 'title' => 'Публиковать выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=show_photo&multiple=1');");
+        $toolmenu[] = array('icon' =>'hide.gif', 'title' => 'Скрыть выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=hide_photo&multiple=1');");
+
+	}
+
+	if (in_array($opt, array('config','add_album','edit_album','add_photo','edit_photo'))){
 
         $toolmenu[] = array('icon'=>'save.gif', 'title'=>$_LANG['SAVE'], 'link'=>'javascript:document.addform.submit();');
         $toolmenu[] = array('icon'=>'cancel.gif', 'title'=>$_LANG['CANCEL'], 'link'=>'?view=components&do=config&id='.$id);
@@ -321,6 +333,44 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 
 //=================================================================================================//
 //=================================================================================================//
+	if ($opt == 'list_photos'){
+		cpAddPathway('Фотографии', '?view=components&do=config&id='.$_REQUEST['id'].'&opt=list_photos');
+		echo '<h3>Фотографии</h3>';
+		
+		//TABLE COLUMNS
+		$fields = array();
+
+		$fields[0]['title'] = 'id';		$fields[0]['field'] = 'id';		$fields[0]['width'] = '30';
+
+		$fields[1]['title'] = 'Дата';		$fields[1]['field'] = 'pubdate';	$fields[1]['width'] = '80';		$fields[1]['filter'] = 15;
+		$fields[1]['fdate'] = '%d/%m/%Y';
+
+		$fields[2]['title'] = 'Название';	$fields[2]['field'] = 'title';		$fields[2]['width'] = '';
+		$fields[2]['filter'] = 15;
+		$fields[2]['link'] = '?view=components&do=config&id='.$_REQUEST['id'].'&opt=edit_photo&item_id=%id%';
+
+		$fields[3]['title'] = 'Показ';		$fields[3]['field'] = 'published';	$fields[3]['width'] = '100';
+        $fields[3]['do'] = 'opt';               $fields[3]['do_suffix'] = '_photo';
+
+		$fields[4]['title'] = 'Просмотров';	$fields[4]['field'] = 'hits';		$fields[4]['width'] = '90';
+		
+		$fields[5]['title'] = 'Альбом';		$fields[5]['field'] = 'album_id';	$fields[5]['width'] = '250';
+		$fields[5]['prc'] = 'cpPhotoAlbumById'; $fields[5]['filter'] = 1;               $fields[5]['filterlist'] = cpGetList('cms_photo_albums');
+	
+		//ACTIONS
+		$actions = array();
+		$actions[0]['title'] = 'Редактировать';
+		$actions[0]['icon']  = 'edit.gif';
+		$actions[0]['link']  = '?view=components&do=config&id='.$_REQUEST['id'].'&opt=edit_photo&item_id=%id%';
+
+		$actions[1]['title'] = 'Удалить';
+		$actions[1]['icon']  = 'delete.gif';
+		$actions[1]['confirm'] = 'Удалить фотографию?';
+		$actions[1]['link']  = '?view=components&do=config&id='.$_REQUEST['id'].'&opt=delete_photo&item_id=%id%';
+				
+		//Print table
+		cpListTable('cms_photo_files', $fields, $actions, '', 'id DESC');		
+	}
 
 	if ($opt == 'add_album' || $opt == 'edit_album'){
         if ($opt=='add_album'){
@@ -584,4 +634,454 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
             ?>
         </p>
     </form>
+<?php	}	if ($opt == 'add_photo' || $opt == 'edit_photo'){	
+            $inPhoto = cmsPhoto::getInstance();	
+            if ($opt=='add_photo'){
+                echo '<h3>Добавить фотографию</h3>';
+            } else {
+                
+                if(isset($_REQUEST['multiple'])){				 
+                    if (isset($_REQUEST['item'])){					
+                        $_SESSION['editlist'] = $_REQUEST['item'];
+                    } else {
+                        echo '<p class="error">Нет выбранных объектов!</p>';
+                        return;
+                    }				 
+                }
+						
+                $ostatok = '';
+					
+                if (isset($_SESSION['editlist'])){
+                    $item_id = array_shift($_SESSION['editlist']);
+                    if (sizeof($_SESSION['editlist'])==0) { unset($_SESSION['editlist']); } else 
+                    { $ostatok = '(На очереди: '.sizeof($_SESSION['editlist']).')'; }
+                } else { $item_id = cmsCore::request('item_id', 'int'); }
+		
+                $mod = $inPhoto->getPhoto($item_id);
+
+                echo '<h3>'.$mod['title'].' '.$ostatok.'</h3>';
+                cpAddPathway('Фотографии', '?view=components&do=config&id='.$id.'&opt=list_photos');
+                cpAddPathway($mod['title'], '?view=components&do=config&id='.$id.'&opt=edit_photo&item_id='.$item_id);		
+						
+            }
+		?>
+		<?php cpCheckWritable('/images/photos', 'folder'); ?>
+		<?php cpCheckWritable('/images/photos/medium', 'folder'); ?>
+		<?php cpCheckWritable('/images/photos/small', 'folder'); ?>				
+        <form action="index.php?view=components&do=config&id=<?php echo $id; ?>" method="post" enctype="multipart/form-data" name="addform" id="addform">
+        <table width="600" border="0" cellspacing="5" class="proptable">
+        <tr>
+            <td width="177">Название фотографии: </td>
+            <td width="311"><input name="title" type="text" id="title" size="30" value="<?php echo htmlspecialchars($mod['title']);?>"/></td>
+        </tr>
+        <tr>
+            <td valign="top">Фотоальбом:</td>
+            <td valign="top">
+                <?php if($opt=='add_photo' || ($opt=='edit_photo' && @$mod['NSDiffer']=='')){ ?>
+                    <select name="album_id" size="8" id="album_id" style="width:250px">
+                        <?php $rootid = $inDB->get_field('cms_photo_albums', "parent_id=0 AND NSDiffer=''", 'id'); ?>
+                        <option value="<?php echo $rootid; ?>" <?php if (@$mod['album_id']==$rootid || !isset($mod['album_id'])) { echo 'selected'; }?>>-- Корневой альбом --</option>
+                        <?php
+                            if (isset($mod['album_id'])){
+                               echo $inCore->getListItemsNS('cms_photo_albums', $mod['album_id']);
+                            } else {
+                               echo $inCore->getListItemsNS('cms_photo_albums');
+                            }
+                        ?>
+                    </select>
+                <?php } else {
+                    $club['id']     = substr($mod['NSDiffer'], 4);
+                    $club['title']  = $inDB->get_field('cms_clubs', "id={$club['id']}", 'title');
+                ?><input type="hidden" name="album_id" value="<?php echo $mod['album_id']; ?>" />
+                    Клуб <a href="index.php?view=components&do=config&id=23&opt=edit&item_id=<?php echo $club['id']; ?>"><?php echo $club['title'];?></a> &rarr; <?php echo $mod['album']; ?>
+                <?php
+                  }
+                ?>
+            </td>
+        </tr>
+        <tr>
+            <td>Файл фотографии: </td>
+            <td><?php if (@$mod['file']) {
+                echo '<div><img src="/images/photos/small/'.$mod['file'].'" border="1" /></div>';
+                echo '<div><a href="/images/photos/medium/'.$mod['file'].'">'.$mod['file'].'</a></div>';
+            } ?>
+                <input name="Filedata" type="file" id="picture" size="30" />
+            </td>
+        </tr>
+        <tr>
+            <td>Публиковать фотографию?</td>
+            <td>
+                <label><input name="published" type="radio" value="1" checked="checked" <?php if (@$mod['published'] || $opt=='add_photo') { echo 'checked="checked"'; } ?> /> Да</label>
+                <label><input name="published" type="radio" value="0"  <?php if (@!$mod['published'] && $opt!='add_photo') { echo 'checked="checked"'; } ?> /> Нет</label>
+            </td>
+        </tr>
+        <tr>
+            <td>Показывать дату? </td>
+            <td>
+                <label><input name="showdate" type="radio" value="1" checked="checked" <?php if (@$mod['showdate'] || $opt=='add_photo') { echo 'checked="checked"'; } ?> /> Да</label>
+                <label><input name="showdate" type="radio" value="0"  <?php if (@!$mod['showdate'] && $opt!='add_photo') { echo 'checked="checked"'; } ?> /> Нет</label>
+            </td>
+        </tr>
+        
+        <tr>
+            <td>Комментарии для фотографии </td>
+            <td>
+                <label><input name="comments" type="radio" value="1" checked="checked" <?php if (@$mod['comments'] || $opt=='add_photo') { echo 'checked="checked"'; } ?> /> Да</label>
+                <label><input name="comments" type="radio" value="0"  <?php if (@!$mod['comments'] && $opt!='add_photo') { echo 'checked="checked"'; } ?> /> Нет</label>
+            </td>
+        </tr>
+        
+        <?php if ($do=='add_photo'){ ?>
+        <tr>
+        <td>Cохранить оригинал: </td>
+        <td><label><input name="saveorig" type="radio" value="1" checked="checked" />Да</label><label><input name="saveorig" type="radio" value="0"  />Нет</label></td>
+        </tr>
+        <?php } ?>
+        <tr>
+            <td valign="top">Теги фотографии: <br />
+            <span class="hinttext">Ключевые слова, через запятую</span></td>
+            <td valign="top"><input name="tags" type="text" id="tags" size="45" value="<?php if (isset($mod['id'])) { echo cmsTagLine('photo', $mod['id'], false); } ?>" /></td>
+        </tr>
+        
+            <?php
+            if(!isset($mod['user']) || @$mod['user']==1){
+                echo '<tr><td valign="top">Описание фотографии:</td>';
+                echo '<td valign="top"><textarea class="text-input" style="width:290px" rows="5" name="description">'.$mod['description'].'</textarea>';
+                echo '</td></tr>';
+            }
+            ?>
+        </table>
+
+        <p>
+            <input name="add_mod" type="submit" id="add_mod" <?php if ($opt=='add_photo') { echo 'value="Загрузить фото"'; } else { echo 'value="Сохранить фото"'; } ?> />
+            <input name="back3" type="button" id="back3" value="Отмена" onclick="window.location.href='index.php?view=components&do=config&id=<?php echo $id; ?>';"/>
+            <input name="opt" type="hidden" id="opt" <?php if ($opt=='add_photo') { echo 'value="submit_photo"'; } else { echo 'value="update_photo"'; } ?> />
+            <?php
+            if ($opt=='edit_photo'){
+                echo '<input name="item_id" type="hidden" value="'.$mod['id'].'" />';
+            }
+            ?>
+        </p>
+        </form>
 <?php	}
+
+//=================================================================================================//
+//=================================================================================================//
+
+    if ($opt == 'add_photo_multi'){
+
+        /* ШАГ 1. Описание фотографий */
+	    $inUser = cmsUser::getInstance();
+        
+        $mod = cmsUser::sessionGet('mod');
+        if ($mod) { cmsUser::sessionDel('mod'); }
+
+        $GLOBALS['cp_page_head'][] = '<script type="text/javascript" src="/includes/jquery/jquery.js"></script>';
+        $GLOBALS['cp_page_head'][] = '<script type="text/javascript">
+            $(document).ready(function() {
+                $("#title").focus();
+                $("#album_id").change(function () {
+                    var cat_id = "";
+                    //cat_id = 
+                    $("#album_id option:selected").each(function () {
+                        cat_id = $(this).val();
+                    });
+                    if(cat_id != 0) {
+                        $("#addform").attr("action", "/admin/index.php?view=components&do=config&id='.$_REQUEST['id'].'&opt=add_photo_multi_step2&id_album="+cat_id+"");
+                    } else {
+                        $("#addform").attr("action", "");
+}
+                })
+                .change();
+            });
+        </script>';
+
+        echo '<h3>Массовая загрузка фото. Шаг 1: Описание фотографий.</h3>';
+        cpAddPathway('Массовая загрузка фото. Шаг 1: Описание фотографий.', $_SERVER['REQUEST_URI']); ?>
+
+        <form action="" method="post" enctype="multipart/form-data" name="addform" id="addform">
+            <table width="600" border="0" cellspacing="5" class="proptable">
+                <tr>
+                    <td colspan="2"><div class="usr_photos_notice">Обратите внимание: если вы укажете название фотографий, то оно будет одно на все загруженные с порядковым номером в конце; если поле оставите пустым, то название фотографии будет браться автоматически из имени файла, исключая расширение.</div></td>
+                </tr>
+            <tr>
+             <td width="177">Названия фотографий: </td>
+             <td width="311"><input name="title" type="text" id="title" class="text-input" maxlength="250" value="" style="width:350px;" /></td>
+         </tr>
+         <tr>
+             <td valign="top">Фотоальбом:</td>
+             <td valign="top"><select name="album_id" size="8" id="album_id" style="width:250px">
+                     <?php  //FIND MENU ROOT
+                        $rootid = $inDB->get_field('cms_photo_albums', 'parent_id=0', 'id');
+                     ?>
+                     <option value="<?php echo $rootid?>" <?php if (@$mod['album_id']==$rootid || !isset($mod['album_id'])) { echo 'selected'; }?>>-- Корневой альбом --</option>
+                     <?php if (isset($mod['album_id'])){
+                         echo $inCore->getListItemsNS('cms_photo_albums', $mod['album_id']);
+                     } else {
+                         echo $inCore->getListItemsNS('cms_photo_albums');
+                     }
+                     ?>
+             </select></td>
+         </tr>
+            <tr>
+                 <td>Публиковать фотографии?</td>
+                 <td><label><input name="published" type="radio" value="1" checked="checked" /> Да </label>
+                     <label><input name="published" type="radio" value="0" /> Нет </label>
+                 </td>
+             </tr>
+             <tr>
+                 <td>Показывать даты? </td>
+                 <td><label><input name="showdate" type="radio" value="1" checked="checked" <?php if (@$mod['showdate']) { echo 'checked="checked"'; } ?> /> Да </label>
+                     <label><input name="showdate" type="radio" value="0" /> Нет </label>
+                 </td>
+             </tr>
+            <tr>
+                 <td>Комментарии разрешены: </td>
+                 <td><label><input name="comments" type="radio" value="1" checked="checked" /> Да</label>
+                     <label><input name="comments" type="radio" value="0"> Нет </label>
+                 </td>
+             </tr>
+             <tr>
+                <td valign="top" id="text_desc">Описание фотографий: </td>
+                <td valign="top">
+                    <textarea name="description" style="width:350px;" rows="5" id="description"></textarea>
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">Теги фотографий: <br />
+                <span class="hinttext">Ключевые слова, через запятую</span></td>
+                <td valign="top"><input name="tags" type="text" id="tags" style="width:350px;" /></td>
+            </tr>
+        </table>
+        <p>
+            <input type="submit" name="submit" id="text_subm" value="Перейти к загрузке" />
+            <input name="back3" type="button" id="cancel_btn" value="Отмена" onclick="window.location.href='index.php?view=components&do=config&id=<?php echo $id; ?>';"/>
+        </p>
+    </form>
+
+    <?php }
+    if ($opt == 'add_photo_multi_step2'){
+        
+        $inUser = cmsUser::getInstance();
+        $inPage = cmsPage::getInstance();
+        
+        $album_id    = $inCore->request('album_id', 'int', 100);
+        $album_title = $inDB->get_field('cms_photo_albums', 'id='.$album_id, 'title');
+        
+        $mod    = array();
+        $mod['published']   = $inCore->request('published', 'int', 1);
+        $mod['showdate']    = $inCore->request('showdate', 'int', 1);
+        $mod['title']       = $inCore->request('title', 'str', '');
+        $mod['description'] = $inCore->request('description', 'str');
+        $mod['tags']        = $inCore->request('tags', 'str');
+        $mod['is_multi']    = 1;
+        $mod['comments']    = $inCore->request('comments', 'int', 1);
+        
+        cmsUser::sessionPut('mod', $mod);
+        $sess_id  = session_id();
+
+        echo '<h3>Массовая загрузка фото. Шаг 2: Загрузка фотографий.</h3>';
+        cpAddPathway('Массовая загрузка фото. Шаг 2: Загрузка фотографий.', $_SERVER['REQUEST_URI']);
+
+        $inPage->addHeadJsLang(array('SELECT_UPLOAD', 'DROP_TO_UPLOAD', 'CANCEL', 'ERROR'));
+
+        $GLOBALS['cp_page_head'][] = '<script type="text/javascript" src="/includes/fileuploader/fileuploader.js"></script>';
+        $GLOBALS['cp_page_head'][] = '<script type="text/javascript" src="/components/photos/js/photos.js"></script>';
+
+        ?>
+
+        <p><span style="color:red">Внимание!!!</span> Фотографии будут загружаться в фотоальбом "<u style="color:#2980b9"><?php echo $album_title; ?></u>"</p>
+
+        <div id="album-photos-widget">
+
+            <div class="previews_list"></div>
+
+            <div class="preview_template" style="display:none">
+                <div class="thumb">
+                    <img class="img-thumbnail" src="" border="0" />
+                </div>
+                <div class="control">
+                    <a href="javascript:" class="del-link">Удалить</a>
+                </div>
+            </div>
+
+            <div id="photos-uploader"></div>
+
+            <div id="savenext">
+                <a href="index.php?view=components&do=config&id=<?php echo $id; ?>&opt=list_photos">Продолжить</a>
+            </div>
+
+            <script>
+                $(document).ready(function() {
+                    createUploader('/photos/upload/<?php echo $album_id; ?>', '<?php echo $sess_id; ?>');
+                });
+            </script>
+        </div>
+
+        <?php
+    }
+    
+            //=================================================================================================//
+//=================================================================================================//
+	if ($opt == 'show_photo'){
+		if (!isset($_REQUEST['item'])){
+            if (isset($_REQUEST['item_id'])){
+                dbShow('cms_photo_files', cmsCore::request('item_id', 'int'));
+            }
+            echo '1'; exit;
+		} else {
+            dbShowList('cms_photo_files', $_REQUEST['item']);
+            header('location:'.$_SERVER['HTTP_REFERER']);
+		}			
+	}
+
+//=================================================================================================//
+//=================================================================================================//
+
+	if ($opt == 'hide_photo'){
+		if (!isset($_REQUEST['item'])){
+            if (isset($_REQUEST['item_id'])){
+                dbHide('cms_photo_files', cmsCore::request('item_id', 'int'));
+            }
+            echo '1'; exit;
+		} else {
+            dbHideList('cms_photo_files', $_REQUEST['item']);
+            header('location:'.$_SERVER['HTTP_REFERER']);
+		}			
+	}
+
+//=================================================================================================//
+//=================================================================================================//
+
+	if ($opt == 'submit_photo'){
+
+        $inPhoto = cmsPhoto::getInstance();
+        $photo = array();
+
+        $photo['album_id']      = $inCore->request('album_id', 'int', 0);
+        $photo['title']         = $inCore->request('title', 'str');
+        $photo['description']   = $inCore->request('description', 'str');
+        $photo['published']     = $inCore->request('published', 'int', 1);
+        $photo['showdate']      = $inCore->request('showdate', 'int', 1);
+        $photo['tags']          = $inCore->request('tags', 'str');
+        $photo['comments']      = $inCore->request('comments', 'int', 1);
+
+        $album = $inDB->getNsCategory('cms_photo_albums', $photo['album_id']);
+        $album = cmsCore::callEvent('GET_PHOTO_ALBUM', $album);
+
+        // Загружаем фото
+        $file = $model->initUploadClass($album)->uploadPhoto();
+            
+        if ($file) {
+                
+        //for upload photo only
+        $last_id = $inDB->get_field('cms_photo_files', 'published=1 ORDER BY id DESC', 'id');
+
+		$photo['file']      = $file['filename'];
+		$photo['title']     = $photo['title'] ? $photo['title'] . $last_id : $file['realfile'];
+		$photo['owner']     = 'photos';
+		$photo['user_id']   = $inUser->id;
+		$photo_id = $inPhoto->addPhoto($photo);
+
+        if($photo['published']){
+
+            $description = '<a href="/photos/photo'.$photo_id.'.html" class="act_photo"><img border="0" src="/images/photos/small/'.$photo['file'].'" /></a>';
+
+            cmsActions::log('add_photo', array(
+                'object' => $photo['title'],
+                'object_url' => '/photos/photo'.$photo_id.'.html',
+                'object_id' => $photo_id,
+                'target' => $album['title'],
+                'target_id' => $album['id'],
+                'target_url' => '/photos/'.$album['id'],
+                'description' => $description
+            ));
+		}
+                
+        } else {
+            $msg = 'Ошибка загрузки фотографии!';
+            cmsCore::addSessionMessage($msg, 'error');
+        }
+
+        $inCore->redirect('?view=components&do=config&opt=list_photos&id='.$_REQUEST['id']);
+	}
+        
+//=================================================================================================//
+//=================================================================================================//
+
+	if ($opt == 'update_photo'){
+        $inPhoto = cmsPhoto::getInstance();
+        if($inCore->inRequest('item_id')) {
+        $item_id = $inCore->request('item_id', 'int');
+
+        $photo = cmsCore::callEvent('GET_PHOTO', $inPhoto->getPhoto($item_id));
+
+        $mod = array();
+        $mod['album_id']       = cmsCore::request('album_id', 'int');
+        $mod['title']          = cmsCore::request('title', 'str');
+		$mod['title']          = $mod['title'] ? $mod['title'] : $photo['title'];
+		$mod['description']    = cmsCore::request('description', 'str', '');
+		$mod['tags']           = cmsCore::request('tags', 'str', '');
+		$mod['comments']       = cmsCore::request('comments', 'int', 1);
+        $mod['published']      = cmsCore::request('published', 'int');
+        $mod['showdate']       = cmsCore::request('showdate', 'int');
+
+		$file = $model->initUploadClass($inDB->getNsCategory('cms_photo_albums', $mod['album_id']))->uploadPhoto($photo['file']);
+		$mod['file'] = $file['filename'] ? $file['filename'] : $photo['file'];
+
+		$inPhoto->updatePhoto($mod, $photo['id']);
+
+		$description = '<a href="/photos/photo'.$photo['id'].'.html" class="act_photo"><img border="0" src="/images/photos/small/'.$mod['file'].'" /></a>';
+
+		cmsActions::updateLog('add_photo', array('object' => $mod['title'], 'description' => $description), $photo['id']);
+
+		cmsCore::addSessionMessage('Фото сохранено', 'success');
+
+            }
+
+            if (!isset($_SESSION['editlist']) || @sizeof($_SESSION['editlist'])==0){
+                    $inCore->redirect('?view=components&do=config&id='.$id.'&opt=list_photos');
+            } else {
+                    $inCore->redirect('?view=components&do=config&id='.$id.'&opt=edit_photo');
+            }
+	}
+
+//=================================================================================================//
+//=================================================================================================//
+
+        if($opt == 'delete_photo'){
+            $inPhoto = cmsPhoto::getInstance();	
+            if (!isset($_REQUEST['item'])){
+
+                $item_id = cmsCore::request('item_id', 'int');
+                if ($item_id > 0){
+                    $photo = cmsCore::callEvent('GET_PHOTO', $inPhoto->getPhoto($item_id));
+                    $inPhoto->deletePhoto($photo, $model->initUploadClass($inDB->getNsCategory('cms_photo_albums', $photo['album_id'])));
+                    cmsCore::addSessionMessage($_LANG['PHOTO_DELETED'], 'success');
+                }
+
+            } else {
+                foreach($_REQUEST['item'] as $key=>$item_id){
+                    $photo = cmsCore::callEvent('GET_PHOTO', $inPhoto->getPhoto($item_id));
+                    $inPhoto->deletePhoto($photo, $model->initUploadClass($inDB->getNsCategory('cms_photo_albums', $photo['album_id'])));
+                }
+                cmsCore::addSessionMessage('Фотографии удалены', 'success');
+            }
+
+            $inCore->redirect('?view=components&do=config&id='.$id.'&opt=list_photos');
+
+        }
+        
+//=================================================================================================//
+//=================================================================================================//
+function cpPhotoAlbumById($id){
+    
+    $inDB = cmsDatabase::getInstance();
+    $result = $inDB->query("SELECT title FROM cms_photo_albums WHERE id = $id");
+
+	if ($inDB->num_rows($result)) {
+            $cat = $inDB->fetch_assoc($result);
+		return '<a href="index.php?view=components&do=config&id='.$_REQUEST['id'].'&opt=edit_album&item_id='.$id.'">'.$cat['title'].'</a> ('.$id.')';
+	} else { return '--'; }
+
+} ?>

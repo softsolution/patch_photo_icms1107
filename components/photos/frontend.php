@@ -500,10 +500,19 @@ if (in_array($do, array('latest', 'best'))){
         $album = cmsCore::callEvent('GET_PHOTO_ALBUM', $album);
         if (!$album['published'] && !$inUser->is_admin) { header("HTTP/1.1 500 File Upload Error"); exit(0); }
 
+        $is_limit = false;
         if (!$album['public'] && !$inUser->is_admin){ header("HTTP/1.1 500 File Upload Error"); exit(0); }
         $today_uploaded = $album['uplimit'] ? $model->loadedByUser24h($inUser->id, $album['id']) : 0;
-        if (!$inUser->is_admin && $album['uplimit'] && $today_uploaded >= $album['uplimit']){
-            header("HTTP/1.1 500 File Upload Error"); exit(0);
+        if (!$inUser->is_admin && $album['uplimit']){
+
+            if($today_uploaded >= $album['uplimit']){
+                header("HTTP/1.1 500 Internal Server Error");
+                exit(0);
+            }
+            //если это последняя фотография на сегодня
+            if($album['uplimit'] == $today_uploaded + 1){
+                $is_limit = true;
+            }
         }
 
         // Массив с первого шага
@@ -566,9 +575,9 @@ if (in_array($do, array('latest', 'best'))){
 
             }
 
-            echo "FILEID:" . $photo['id'];
-
             $result['id']  = $photo['id'];
+            $result['album_id']  = $photo['album_id'];
+            $result['is_limit']  = $is_limit;
 
             $inCore->jsonOutput($result);
 
@@ -579,7 +588,7 @@ if (in_array($do, array('latest', 'best'))){
 /* ========================================================================== */
 /* ========================= УДАЛЕНИЕ ФОТО ================================== */
 /* ========================================================================== */
-
+//@todo поправку на количество нужно добавить!!!
     if ($do=='del_photo') {
 
         if(!cmsCore::isAjax()) { cmsCore::error404(); }
