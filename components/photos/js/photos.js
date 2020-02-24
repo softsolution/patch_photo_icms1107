@@ -107,11 +107,13 @@ function createUploader(upload_url, sess_id, upload_complete_url){
 			var preview_block = $('.preview_template', widget).clone().removeClass('preview_template').addClass('preview').attr('rel', result.id).show();
 
 			$('img', preview_block).attr('src', result.url);
+
 			$('a', preview_block).click(function() {
 				photos.removePhoto(result.id);
 			});
 
 			$('.previews_list', widget).append(preview_block);
+			$('#divStatus').show();
 
 			if(upload_complete_url && result.is_limit){
 				window.location.href = upload_complete_url;
