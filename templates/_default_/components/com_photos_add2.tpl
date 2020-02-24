@@ -26,13 +26,13 @@
         <div id="photos-uploader"></div>
 
         <div id="savenext">
-            После загрузки файлов <a href="/photos/{$album.id}">продолжить</a>
+            После загрузки файлов <a href="{$upload_complete_url}">продолжить</a>
         </div>
 
         {literal}
         <script>
             $(function() {
-                createUploader('{/literal}{$upload_url}/{$album.id}', '{$sess_id}'{literal});
+                createUploader('{/literal}{$upload_url}', '{$sess_id}', '{$upload_complete_url}'{literal});
             });
         </script>
         {/literal}

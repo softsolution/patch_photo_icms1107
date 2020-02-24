@@ -1,7 +1,7 @@
 <?php
 if(!defined('VALID_CMS')) { die('ACCESS DENIED'); }
 
-///////////////////// форма загрузки фотографий 1 шаг //////////////////////////
+/////////////////// форма загрузки фотографий 1 шаг ////////////////////////////
 if ($do_photo == 'addphoto'){
 
 	$inPage->addPathway($_LANG['ADD_PHOTO'].': '.$_LANG['STEP_1']);
@@ -9,14 +9,9 @@ if ($do_photo == 'addphoto'){
 
 	if (!cmsCore::inRequest('submit')){
 
-		$inPage->initAutocomplete();
-		$autocomplete_js = $inPage->getAutocompleteJS('tagsearch', 'tags');
-
 		cmsPage::initTemplate('components', 'com_photos_add1')->
-                assign('no_tags', false)->
-                assign('is_admin', $inUser->is_admin)->
-                assign('cfg', $model->config)->
-                assign('autocomplete_js', $autocomplete_js)->
+                assign('no_tags', true)->
+                assign('is_admin', ($is_admin || $is_moder))->
                 display('com_photos_add1.tpl');
 
 	}
@@ -28,8 +23,7 @@ if ($do_photo == 'addphoto'){
 		$mod['title']       = cmsCore::request('title', 'str', '');
 		$mod['description'] = cmsCore::request('description', 'str');
 		$mod['is_multi']    = cmsCore::request('only_mod', 'int', 0);
-		$mod['tags']        = cmsCore::request('tags', 'str');
-		$mod['comments']    = $inUser->is_admin ? cmsCore::request('comments', 'int') : 1;
+		$mod['comments']    = ($is_admin || $is_moder) ? cmsCore::request('comments', 'int') : 1;
         if($model->config['seo_user_access'] || $inUser->is_admin){
             $mod['pagetitle'] = cmsCore::request('pagetitle', 'str', '');
             $mod['meta_keys'] = cmsCore::request('meta_keys', 'str', '');
@@ -38,13 +32,13 @@ if ($do_photo == 'addphoto'){
 
 		cmsUser::sessionPut('mod', $mod);
 
-		cmsCore::redirect('/photos/'.$album['id'].'/submit_photo.html');
+		cmsCore::redirect('/clubs/photoalbum'.$album['id'].'/submit_photo.html');
 
 	}
 
 }
 
-////////////////// форма загрузки фотографий 2 шаг /////////////////////////////
+/////////////////// форма загрузки фотографий 2 шаг ////////////////////////////
 if ($do_photo == 'submit_photo'){
 
 	$mod = cmsUser::sessionGet('mod');
@@ -53,37 +47,27 @@ if ($do_photo == 'submit_photo'){
 	$inPage->addPathway($_LANG['ADD_PHOTO'].': '.$_LANG['STEP_2']);
 	$inPage->setTitle($_LANG['ADD_PHOTO'].': '.$_LANG['STEP_2']);
 
-    if($album['uplimit'] && !$inUser->is_admin) {
-
-        $max_limit  = true;
-        $max_files  = (int)$album['uplimit'] - $today_uploaded;
-		$stop_photo = $today_uploaded >= (int)$album['uplimit'];
-
-    } else {
-
-        $max_limit  = false;
-        $max_files  = 0;
-		$stop_photo = false;
-
-    }
-
     $inPage->addHeadJsLang(array('SELECT_UPLOAD', 'DROP_TO_UPLOAD', 'CANCEL', 'ERROR'));
+    $inPage->addHeadJS('components/photos/js/photos.js');
 
     cmsPage::initTemplate('components', 'com_photos_add2')->
-            assign('upload_url', '/photos/upload/'.$album['id'])->
-            assign('upload_complete_url', '/photos/'.$album['id'])->
+            assign('upload_url', '/clubs/upload_photo/'.$album['id'])->
+            assign('upload_complete_url', '/clubs/uploaded'.$album['id'].'.html')->
             assign('sess_id', session_id())->
-            assign('max_limit', $max_limit)->
+            assign('max_limit', false)->
             assign('album', $album)->
-            assign('max_files', $max_files)->
+            assign('max_files', 0)->
             assign('uload_type', $mod['is_multi'] ? 'multi' : 'single')->
-            assign('stop_photo', $stop_photo)->
+            assign('stop_photo', false)->
             display('com_photos_add2.tpl');
 
 }
 
-///////////////// фотографии загружены /////////////////////////////////////////
+/////////////////////// фотографии загружены ///////////////////////////////////
 if ($do_photo == 'uploaded'){
+
 	cmsUser::sessionDel('mod');
-	cmsCore::redirect('/photos/'.$album['id']);
+
+	cmsCore::redirect('/clubs/photoalbum'.$album['id']);
+
 }

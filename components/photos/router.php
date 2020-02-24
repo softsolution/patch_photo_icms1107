@@ -64,7 +64,7 @@
         $routes[] = array(
                             '_uri'  => '/^photos\/([0-9]+)\/uploaded.html$/i',
                             'do'    => 'addphoto',
-							'do_photo'    => 'uploaded',
+							'do_photo'  => 'uploaded',
                             1       => 'id'
                          );
 

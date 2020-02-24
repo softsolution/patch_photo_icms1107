@@ -94,14 +94,14 @@ $(function(){
   }
 });
 
-function createUploader(upload_url, sess_id){
+function createUploader(upload_url, sess_id, upload_complete_url){
 	uploader = new qq.FileUploader({
 		element: document.getElementById('photos-uploader'),
 		action: upload_url,
 		debug: false,
 		params: {sess_id: sess_id},
 		onComplete: function(id, file_name, result) {
-console.log(result);
+
 			if (!result.success) { return; }
 			var widget = $('#album-photos-widget');
 			var preview_block = $('.preview_template', widget).clone().removeClass('preview_template').addClass('preview').attr('rel', result.id).show();
@@ -113,8 +113,8 @@ console.log(result);
 
 			$('.previews_list', widget).append(preview_block);
 
-			if(result.is_limit){
-				window.location.href = '/photos/'+result.album_id;
+			if(upload_complete_url && result.is_limit){
+				window.location.href = upload_complete_url;
 			}
 
 		}

@@ -588,7 +588,7 @@ if (in_array($do, array('latest', 'best'))){
 /* ========================================================================== */
 /* ========================= УДАЛЕНИЕ ФОТО ================================== */
 /* ========================================================================== */
-//@todo поправку на количество нужно добавить!!!
+
     if ($do=='del_photo') {
 
         if(!cmsCore::isAjax()) { cmsCore::error404(); }
@@ -602,13 +602,24 @@ if (in_array($do, array('latest', 'best'))){
         $photo = cmsCore::callEvent('GET_PHOTO', $inPhoto->getPhoto($photo_id));
         if (!$photo) { cmsCore::halt(); }
 
-        if (mb_strstr($photo['NSDiffer'],'club')) { cmsCore::halt(); }
+        $owner = 'photos';
+        if (mb_strstr($photo['NSDiffer'],'club')) {
+            $owner = 'club';
+        }
 
         $is_author = (($photo['user_id'] == $inUser->id) && $inUser->id);
 
         if (!$inUser->is_admin && !$is_author) { cmsCore::halt(); }
 
-        $inPhoto->deletePhoto($photo, $model->initUploadClass($inDB->getNsCategory('cms_photo_albums', $photo['album_id'])));
+        if($owner == 'club'){
+
+            cmsCore::loadModel('clubs');
+            $model_clubs = new cms_model_clubs();
+
+            $inPhoto->deletePhoto($photo, $model_clubs->initUploadClass());
+        } else {
+            $inPhoto->deletePhoto($photo, $model->initUploadClass($inDB->getNsCategory('cms_photo_albums', $photo['album_id'])));
+        }
 
         $inCore->jsonOutput(array('success' => true));
 
