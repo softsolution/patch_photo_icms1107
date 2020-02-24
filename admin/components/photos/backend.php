@@ -55,18 +55,18 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 //=================================================================================================//
 
 	if ($opt=='list_albums'|| $opt=='list_photos' || $opt=='add_photo_multi' || $opt=='add_photo_multi_step2'
-        || $opt=='list_albums_clubs' || $opt=='list_users_albums' || $opt=='list_users_photos'
+        || $opt=='list_albums_clubs' || $opt=='list_users_albums' || $opt=='list_users_photos' || $opt=='list_photos_clubs'
     ){
 
-        $toolmenu[] = array('icon'=>'listphoto.gif', 'title' => 'Все фотографии', 'link'=>'?view=components&do=config&id='.$id.'&opt=list_photos');
         $toolmenu[] = array('icon'=>'folders.gif', 'title'=>$_LANG['AD_ALBUMS'], 'link'=>'?view=components&do=config&id='.$id.'&opt=list_albums');
+        $toolmenu[] = array('icon'=>'listphoto.gif', 'title' => 'Все фотографии', 'link'=>'?view=components&do=config&id='.$id.'&opt=list_photos');
 
         $toolmenu[] = array('icon'=>'newfolder.gif', 'title'=>$_LANG['AD_ALBUM_ADD'], 'link'=>'?view=components&do=config&id='.$id.'&opt=add_album');
         $toolmenu[] = array('icon'=>'newphoto.gif', 'title' => 'Новая фотография', 'link' => '?view=components&do=config&id='.$id.'&opt=add_photo');
 	    $toolmenu[] = array('icon'=>'newphotomulti.gif', 'title' => 'Массовая загрузка фото', 'link' => '?view=components&do=config&id='.$id.'&opt=add_photo_multi');
 
         $toolmenu[] = array('icon'=>'image.png', 'title'=>'Фотоальбомы клубов', 'link'=>'?view=components&do=config&id='.$id.'&opt=list_albums_clubs');
-        //$toolmenu[] = array('icon'=>'images.png', 'title'=>'Фотографии клубов', 'link'=>'?view=components&do=config&id='.$id.'&opt=list_photos_clubs');
+        $toolmenu[] = array('icon'=>'images.png', 'title'=>'Фотографии клубов', 'link'=>'?view=components&do=config&id='.$id.'&opt=list_photos_clubs');
 
         $toolmenu[] = array('icon'=>'photo_album.png', 'title'=>'Фотоальбомы пользователей', 'link'=>'?view=components&do=config&id='.$id.'&opt=list_users_albums');
         $toolmenu[] = array('icon'=>'photos.png', 'title'=>'Фотографии пользователей', 'link'=>'?view=components&do=config&id='.$id.'&opt=list_users_photos');
@@ -75,13 +75,14 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 
     }
 
-	if(in_array($opt, array('list_photos'))){
+	if(in_array($opt, array('list_photos', 'list_photos_clubs'))){
 
-        $toolmenu[] = array('icon'=>'edit.gif', 'title' => 'Редактировать выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=edit_photo&multiple=1');");
-        $toolmenu[] = array('icon'=>'delete.gif', 'title' => 'Удалить выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=delete_photo&multiple=1');");
-        $toolmenu[] = array('icon'=>'show.gif', 'title' => 'Публиковать выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=show_photo&multiple=1');");
-        $toolmenu[] = array('icon' =>'hide.gif', 'title' => 'Скрыть выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=hide_photo&multiple=1');");
-
+	    if($opt == 'list_photos_clubs') { $suffix = '&is_club=1'; } else { $suffix = ''; }
+        $toolmenu[] = array('icon'=>'edit.gif', 'title' => 'Редактировать выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=edit_photo&multiple=1".$suffix."');");
+        $toolmenu[] = array('icon'=>'delete.gif', 'title' => 'Удалить выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=delete_photo&multiple=1".$suffix."');");
+        $toolmenu[] = array('icon'=>'show.gif', 'title' => 'Публиковать выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=show_photo&multiple=1".$suffix."');");
+        $toolmenu[] = array('icon' =>'hide.gif', 'title' => 'Скрыть выбранные', 'link' => "javascript:checkSel('?view=components&do=config&id=".$id."&opt=hide_photo&multiple=1".$suffix."');");
+        unset($suffix);
 	}
 
     if(in_array($opt, array('list_users_photos'))){
@@ -377,35 +378,35 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
         $fields[] = array('title'=>$_LANG['DATE'], 'field'=>'pubdate', 'width'=>'80', 'filter' => 15, 'fdate' => '%d/%m/%Y');
         $fields[] = array('title'=>$_LANG['TITLE'], 'field'=>'title', 'width'=>'', 'filter' => 15, 'link' => '?view=components&do=config&id='.$id.'&opt=edit_photo&item_id=%id%');
         $fields[] = array('title'=>$_LANG['AD_IS_PUBLISHED'], 'field'=>'published', 'width'=>'60', 'do'=>'opt', 'do_suffix'=>'_photo');
-        $fields[] = array('title'=>'Альбом', 'field'=>'album_id', 'width'=>'250', 'prc'=>'cpPhotoAlbumById', 'filter' => 1, 'filterlist' => cpGetList('cms_photo_albums'));
+        $fields[] = array('title'=>'Альбом', 'field'=>'album_id', 'width'=>'250', 'prc'=>'cpPhotoAlbumById', 'filter' => 1, 'filterlist' => cpGetListNested('cms_photo_albums', 'title', '', '', 100, false));
 
         $actions[] = array('title'=>$_LANG['EDIT'], 'icon'=>'edit.gif', 'link'=>'?view=components&do=config&id='.$id.'&opt=edit_photo&item_id=%id%');
         $actions[] = array('title'=>$_LANG['DELETE'], 'icon'=>'delete.gif', 'confirm'=>'Удалить фотографию?', 'link'=>'?view=components&do=config&id='.$id.'&opt=delete_photo&item_id=%id%');
 
-		cpListTable('cms_photo_files', $fields, $actions, '', 'id DESC');
+		cpListTable('cms_photo_files', $fields, $actions, "owner ='photos'", 'id DESC');
 
 	}
 
 //=================================================================================================//
 //=================================================================================================//
 
-//	if ($opt == 'list_photos_clubs'){
-//
-//        cpAddPathway('Фотографии клубов', '?view=components&do=config&id='.$id.'&opt=list_photos_clubs');
-//        echo '<h3>Фотографии клубов</h3>';
-//
-//        $fields[] = array('title'=>'id', 'field'=>'id', 'width'=>'30');
-//        $fields[] = array('title'=>$_LANG['DATE'], 'field'=>'pubdate', 'width'=>'80', 'filter' => 15, 'fdate' => '%d/%m/%Y');
-//        $fields[] = array('title'=>$_LANG['TITLE'], 'field'=>'title', 'width'=>'', 'filter' => 15, 'link' => '?view=components&do=config&id='.$id.'&opt=edit_photo&item_id=%id%&is_club=1');
-//        $fields[] = array('title'=>$_LANG['AD_IS_PUBLISHED'], 'field'=>'published', 'width'=>'60', 'do'=>'opt', 'do_suffix'=>'_photo');
-//        $fields[] = array('title'=>'Альбом клуба', 'field'=>'album_id', 'width'=>'250', 'prc'=>'cpPhotoAlbumById', 'filter' => 1, 'filterlist' => cpGetList('cms_photo_albums'));
-//
-//        $actions[] = array('title'=>$_LANG['EDIT'], 'icon'=>'edit.gif', 'link'=>'?view=components&do=config&id='.$id.'&opt=edit_photo&item_id=%id%&is_club=1');
-//        $actions[] = array('title'=>$_LANG['DELETE'], 'icon'=>'delete.gif', 'confirm'=>'Удалить фотографию?', 'link'=>'?view=components&do=config&id='.$id.'&opt=delete_photo&item_id=%id%&is_club=1');
-//
-//        cpListTable('cms_photo_files', $fields, $actions, '(owner LIKE "club%")', 'id DESC');
-//
-//    }
+	if ($opt == 'list_photos_clubs'){
+
+        cpAddPathway('Фотографии клубов', '?view=components&do=config&id='.$id.'&opt=list_photos_clubs');
+        echo '<h3>Фотографии клубов</h3>';
+
+        $fields[] = array('title'=>'id', 'field'=>'id', 'width'=>'30');
+        $fields[] = array('title'=>$_LANG['DATE'], 'field'=>'pubdate', 'width'=>'80', 'filter' => 15, 'fdate' => '%d/%m/%Y');
+        $fields[] = array('title'=>$_LANG['TITLE'], 'field'=>'title', 'width'=>'', 'filter' => 15, 'link' => '?view=components&do=config&id='.$id.'&opt=edit_photo&item_id=%id%&is_club=1');
+        $fields[] = array('title'=>$_LANG['AD_IS_PUBLISHED'], 'field'=>'published', 'width'=>'60', 'do'=>'opt', 'do_suffix'=>'_photo');
+        $fields[] = array('title'=>'Альбом', 'field'=>'album_id', 'width'=>'250', 'prc'=>'cpPhotoAlbumById', 'filter' => 1, 'filterlist' => cpGetListByWhere('cms_photo_albums', 'title', 'parent_id>0 AND (NSDiffer LIKE "club%")'));
+
+        $actions[] = array('title'=>$_LANG['EDIT'], 'icon'=>'edit.gif', 'link'=>'?view=components&do=config&id='.$id.'&opt=edit_photo&item_id=%id%&is_club=1');
+        $actions[] = array('title'=>$_LANG['DELETE'], 'icon'=>'delete.gif', 'confirm'=>'Удалить фотографию?', 'link'=>'?view=components&do=config&id='.$id.'&opt=delete_photo&item_id=%id%&is_club=1');
+
+        cpListTable('cms_photo_files', $fields, $actions, '(owner LIKE "club%")', 'id DESC');
+
+    }
 
 //=================================================================================================//
 //=================================================================================================//
@@ -722,7 +723,9 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 
                 echo '<h3>'.$mod['title'].' '.$ostatok.'</h3>';
                 cpAddPathway('Фотографии', '?view=components&do=config&id='.$id.'&opt=list_photos');
-                cpAddPathway($mod['title'], '?view=components&do=config&id='.$id.'&opt=edit_photo&item_id='.$item_id);		
+                cpAddPathway($mod['title'], '?view=components&do=config&id='.$id.'&opt=edit_photo&item_id='.$item_id);
+
+                $is_club = cmsCore::request('is_club', 'int', 0);
 						
             }
 		?>
@@ -730,6 +733,7 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 		<?php cpCheckWritable('/images/photos/medium', 'folder'); ?>
 		<?php cpCheckWritable('/images/photos/small', 'folder'); ?>				
         <form action="index.php?view=components&do=config&id=<?php echo $id; ?>" method="post" enctype="multipart/form-data" name="addform" id="addform">
+        <?php if($is_club) { ?><input type="hidden" name="is_club" value="1"><?php } ?>
         <table width="600" border="0" cellspacing="5" class="proptable">
         <tr>
             <td width="177">Название фотографии: </td>
@@ -1064,7 +1068,7 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
             cmsCore::addSessionMessage($msg, 'error');
         }
 
-        $inCore->redirect('?view=components&do=config&opt=list_photos&id='.$id);
+        cmsCore::redirect('?view=components&do=config&opt=list_photos&id='.$id);
 	}
         
 //=================================================================================================//
@@ -1073,6 +1077,7 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 	if ($opt == 'update_photo'){
         $inPhoto = cmsPhoto::getInstance();
         if($inCore->inRequest('item_id')) {
+
             $item_id = $inCore->request('item_id', 'int');
 
             $photo = cmsCore::callEvent('GET_PHOTO', $inPhoto->getPhoto($item_id));
@@ -1096,14 +1101,21 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 
             cmsActions::updateLog('add_photo', array('object' => $mod['title'], 'description' => $description), $photo['id']);
 
-            cmsCore::addSessionMessage('Фото сохранено', 'success');
+            //cmsCore::addSessionMessage('Фото сохранено', 'success');
 
         }
 
+        $is_club = cmsCore::request('is_club', 'int', 0);
+
         if (!isset($_SESSION['editlist']) || @sizeof($_SESSION['editlist'])==0){
-            $inCore->redirect('?view=components&do=config&id='.$id.'&opt=list_photos');
+            if($is_club){
+                cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_photos_clubs');
+            } else {
+                cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_photos');
+            }
         } else {
-            $inCore->redirect('?view=components&do=config&id='.$id.'&opt=edit_photo');
+            $suffix = $is_club ? '&is_club=1' : '';
+            cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=edit_photo'.$suffix);
         }
 	}
 
@@ -1129,7 +1141,13 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
             cmsCore::addSessionMessage('Фотографии удалены', 'success');
         }
 
-        $inCore->redirect('?view=components&do=config&id='.$id.'&opt=list_photos');
+        $is_club = cmsCore::request('is_club', 'int', 0);
+
+        if($is_club){
+            cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_photos_clubs');
+        } else {
+            cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_photos');
+        }
     }
 
 //===================================   Список фотографий пользователей   =========================//
@@ -1274,9 +1292,9 @@ if ($opt == 'update_user_photo'){
     }
 
     if (!isset($_SESSION['editlist']) || @sizeof($_SESSION['editlist'])==0){
-        $inCore->redirect('?view=components&do=config&id='.$id.'&opt=list_users_photos');
+        cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_users_photos');
     } else {
-        $inCore->redirect('?view=components&do=config&id='.$id.'&opt=edit_user_photo');
+        cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=edit_user_photo');
     }
 
 }
@@ -1303,7 +1321,7 @@ if($opt == 'delete_user_photo'){
         cmsCore::addSessionMessage('Фотографии удалены', 'success');
     }
 
-    $inCore->redirect('?view=components&do=config&id='.$id.'&opt=list_users_photos');
+    cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_users_photos');
 
 }
 
@@ -1383,7 +1401,7 @@ if ($opt == 'update_user_album'){
 
         $inDB->update('cms_user_albums', $album, $item_id);
 
-        $inCore->redirect('?view=components&do=config&id='.$id.'&opt=list_users_albums');
+        cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_users_albums');
     }
 }
 
@@ -1405,7 +1423,7 @@ if($opt == 'delete_user_album'){
         }
     }
 
-    $inCore->redirect('?view=components&do=config&id='.$id.'&opt=list_users_albums');
+    cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_users_albums');
 }
 
 if ($opt == 'list_albums_clubs'){
@@ -1484,16 +1502,75 @@ function cpUserNickLink($user_id=0){
     global $_LANG;
     $inDB = cmsDatabase::getInstance();
     if ($user_id){
-        $sql = "SELECT id, nickname  FROM cms_users WHERE id = $user_id";
+        $sql = "SELECT id, nickname, login  FROM cms_users WHERE id = $user_id";
         $result = $inDB->query($sql);
         if ($inDB->num_rows($result)) {
             $usr = $inDB->fetch_assoc($result);
-            return '<a href="index.php?view=users&do=edit&id='.$usr['id'].'">'.$usr['nickname'].'</a>';
+            return '<a href="/users/'.$usr['login'].'">'.$usr['nickname'].'</a>';
         }
         else { return false; }
     } else {
         return '<em style="color:gray">'.$_LANG['AD_NOT_DEFINED'].'</em>';
     }
 }
+
+function cpGetListByWhere($listtype, $field_name='title', $where){
+
+    $list = array();
+
+    $inDB = cmsDatabase::getInstance();
+    $sql  = "SELECT id, {$field_name} FROM $listtype WHERE {$where} ORDER BY {$field_name} ASC";
+    $result = $inDB->query($sql) ;
+
+    if ($inDB->num_rows($result)>0) {
+        while($item = $inDB->fetch_assoc($result)){
+            $next = sizeof($list);
+            $list[$next]['title'] = $item[$field_name];
+            $list[$next]['id'] = $item['id'];
+        }
+    }
+
+    return $list;
+
+}
+
+function cpGetListNested($table, $field_name='title', $differ='', $need_field='', $rootid=0, $no_padding=false){
+
+        $inDB = cmsDatabase::getInstance();
+
+        $nested_sets = cmsCore::nestedSetsInit($table);
+
+        $lookup = "parent_id=0 AND NSDiffer='{$differ}'";
+
+        if(!$rootid) { $rootid = $inDB->get_field($table, $lookup, 'id'); }
+
+        if(!$rootid) { return; }
+
+        $root_cat = $inDB->getNsCategory($table, $rootid, $differ);
+
+        $rs_rows = $nested_sets->SelectSubNodes($rootid);
+
+        $items = array();
+
+        $items[] = array('id' => $root_cat['id'], 'title' => $root_cat['title']);
+
+        if ($rs_rows){
+            while($node = $inDB->fetch_assoc($rs_rows)){
+                if (!$need_field || $node[$need_field]){
+                    if (!$no_padding){
+                        $padding = str_repeat('--', $node['NSLevel']) . ' ';
+                    } else {
+                        $padding = '';
+                    }
+                    $items[] = array('id'=> $node['id'], 'title'=>$padding.$node[$field_name]);
+                }
+            }
+        }
+
+        return $items;
+}
+
+
+
 
 ?>
