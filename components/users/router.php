@@ -1,7 +1,7 @@
 <?php
 /******************************************************************************/
 //                                                                            //
-//                           InstantCMS v1.10.6                               //
+//                           InstantCMS v1.10.7.007                           //
 //                        http://www.instantcms.ru/                           //
 //                                                                            //
 //                   written by InstantCMS Team, 2007-2015                    //
@@ -445,19 +445,26 @@
 							'ageto' => 'all'
                          );
 
-        $routes[] = array(
+		$routes[] = array(
+                            '_uri'  => '/^users\/([0-9]+)\/blacklist.html$/i',
+                            'do'    => 'blacklist',
+                            1       => 'id'
+                         );
+
+
+		$routes[] = array(
                             '_uri'    => '/^users\/group\/([0-9]+)(?:\-([0-9]+))?$/i',
                             1         => 'group_id',
                             2         => 'page',
                             'orderby' => 'regdate',
                             'orderto' => 'desc'
-                         );
+						);
 
         $routes[] = array(
                             '_uri'  => '/^users\/([a-zA-z0-9\.]+)$/i',
                             'do'    => 'profile',
                             1       => 'login'
-                         );
+						);
 
         return $routes;
 

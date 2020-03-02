@@ -1,7 +1,7 @@
 <?php
 /******************************************************************************/
 //                                                                            //
-//                           InstantCMS v1.10.6                               //
+//                           InstantCMS v1.10.7.007                           //
 //                        http://www.instantcms.ru/                           //
 //                                                                            //
 //                   written by InstantCMS Team, 2007-2015                    //
@@ -227,11 +227,13 @@ class cms_model_users{
         //подготовим условия
         $r_join = $is_online ? "INNER JOIN cms_online o ON o.user_id = u.id" : '';
 
+		// добавляем контроль для skype и телефона
         $sql = "SELECT
 				u.id,
 				u.login,
 				u.nickname,
 				u.icq,
+				u.skype, u.phone,
 				u.logdate as flogdate,
 				u.rating,
 		        u.is_deleted as is_deleted,
@@ -315,7 +317,7 @@ class cms_model_users{
 				u.*,
                 u.status as status_text,
 				u.rating as user_rating,
-                p.id as pid, p.city, p.description, p.showmail, p.showbirth, p.showicq, p.showphone,
+                p.id as pid, p.city, p.description, p.showmail, p.showbirth, p.showicq, p.showskype, p.showphone,
 				p.karma, p.imageurl, p.allow_who,
 				p.gender as gender,	p.formsdata, p.signature,
 				p.email_newmsg, p.cm_subscribe,
@@ -373,7 +375,7 @@ class cms_model_users{
 		if ($is_delete) {
 
 			$avatar = $this->inDB->get_field('cms_user_profiles', "user_id = '$user_id'", 'imageurl');
-            if ($avatar && $avatar != 'nopic.jpg'){
+            if ($avatar && $avatar != 'nopic.png'){
                  @unlink(PATH.'/images/users/avatars/'.$avatar);
                  @unlink(PATH.'/images/users/avatars/small/'.$avatar);
             }
@@ -1294,6 +1296,47 @@ class cms_model_users{
 		return $this->inDB->num_rows($result);
 
 	}
+        
+        public function getUserBlackList($user_id){
+
+            $sql = "SELECT b.*, u.nickname as nickname, u.login as login, u.is_deleted, p.imageurl "
+                    . "FROM cms_user_blacklist b "
+                    . "LEFT JOIN cms_users u ON u.id = b.from_id "
+                    . "LEFT JOIN cms_user_profiles p ON p.user_id = b.from_id "
+                    . " WHERE to_id = '$user_id'";
+            
+            $result = $this->inDB->query($sql);
+            if ($this->inDB->num_rows($result)){
+                $users = array();
+                while($user = $this->inDB->fetch_assoc($result)){
+                    $user['avatar']   = cmsUser::getUserAvatarUrl($user['author_id'], 'small', $user['imageurl'], $user['is_deleted']);
+                    $users[] =  $user;
+                }
+                return $users;
+            }
+            
+            return false;
+            
+        }
+        
+        public function getIsUserBlackList($auth_id, $user_id){
+
+            return $this->inDB->get_fields('cms_user_blacklist', "to_id = '$auth_id' AND from_id = '$user_id'", '*', 'id DESC');
+            
+        }
+        
+        public function addUserBlackList($auth_id, $user_id) {
+
+            $sql = "INSERT INTO cms_user_blacklist (to_id, from_id, logdate)
+                    VALUES('{$auth_id}', '{$user_id}', NOW())";
+
+            $this->inDB->query($sql);
+
+            return true;
+
+        }
+      
+
 
 /* ==================================================================================================== */
 /* ==================================================================================================== */
@@ -1318,5 +1361,9 @@ class cms_model_users{
         return $inUploadPhoto;
 
     }
+
+
+/* ==================================================================================================== */
+/* ==================================================================================================== */
 
 }

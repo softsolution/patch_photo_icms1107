@@ -7,7 +7,7 @@
     {add_js file='includes/fileuploader/fileuploader.js'}
 
     {if $max_limit}
-        <p class="usr_photos_add_limit">{$LANG.YOU_CAN_UPLOAD} <strong>{$max_files}</strong> {$LANG.PHOTO}</p>
+    <p class="usr_photos_add_limit">{$LANG.YOU_CAN_UPLOAD} <strong>{$max_files}</strong> {$LANG.PHOTO}</p>
     {/if}
 
     <div id="album-photos-widget">
@@ -20,7 +20,7 @@
             </div>
             <div class="control">
                 <a href="javascript:" class="del-link">Удалить</a>
-            </div>
+        </div>
         </div>
 
         <div id="photos-uploader"></div>
@@ -62,5 +62,5 @@
         </form>
 {/if}
 {else}
-<p class="usr_photos_add_limit">{$LANG.MAX_UPLOAD_IN_DAY}</p>
+<p class="text-danger">{$LANG.MAX_UPLOAD_IN_DAY}</p>
 {/if}

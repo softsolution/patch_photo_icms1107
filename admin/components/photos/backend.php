@@ -73,7 +73,7 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 
         $toolmenu[] = array('icon'=>'config.gif', 'title'=>$_LANG['AD_SETTINGS'], 'link'=>'?view=components&do=config&id='.$id.'&opt=config');
 
-    }
+	}
 
 	if(in_array($opt, array('list_photos', 'list_photos_clubs'))){
 
@@ -292,8 +292,8 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
         $is_club      = cmsCore::request('is_club', 'int', 0);
 
         if(!$is_club){
-            $old_album = $inDB->getNsCategory('cms_photo_albums', $item_id);
-            if (!$old_album) { cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_albums'); }
+        $old_album = $inDB->getNsCategory('cms_photo_albums', $item_id);
+        if (!$old_album) { cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_albums'); }
         }
 
         $album['title']         = cmsCore::request('title', 'str', 'NO_TITLE');
@@ -301,38 +301,38 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
 
         if(!$is_club){
             $album['description']   = cmsCore::request('description', 'str', '');
-            $album['showdate']      = cmsCore::request('showdate', 'int');
-            $album['parent_id']     = cmsCore::request('parent_id', 'int');
-            $album['is_comments']   = cmsCore::request('is_comments', 'int');
-            $album['showtype']      = cmsCore::request('showtype', 'str');
-            $album['public']        = cmsCore::request('public', 'int');
+        $album['showdate']      = cmsCore::request('showdate', 'int');
+        $album['parent_id']     = cmsCore::request('parent_id', 'int');
+        $album['is_comments']   = cmsCore::request('is_comments', 'int');
+        $album['showtype']      = cmsCore::request('showtype', 'str');
+        $album['public']        = cmsCore::request('public', 'int');
             $album['perpage']       = cmsCore::request('perpage', 'int');
-            $album['orderby']       = cmsCore::request('orderby', 'str');
-            $album['orderto']       = cmsCore::request('orderto', 'str');
-            $album['thumb1']        = cmsCore::request('thumb1', 'int');
-            $album['thumb2']        = cmsCore::request('thumb2', 'int');
-            $album['thumbsqr']      = cmsCore::request('thumbsqr', 'int');
-            $album['cssprefix']     = cmsCore::request('cssprefix', 'str');
-            $album['nav']           = cmsCore::request('nav', 'int');
-            $album['uplimit']       = cmsCore::request('uplimit', 'int');
-            $album['maxcols']       = cmsCore::request('maxcols', 'int');
-            $album['orderform']     = cmsCore::request('orderform', 'int');
-            $album['showtags']      = cmsCore::request('showtags', 'int');
-            $album['bbcode']        = cmsCore::request('bbcode', 'int');
+        $album['orderby']       = cmsCore::request('orderby', 'str');
+        $album['orderto']       = cmsCore::request('orderto', 'str');
+        $album['thumb1']        = cmsCore::request('thumb1', 'int');
+        $album['thumb2']        = cmsCore::request('thumb2', 'int');
+        $album['thumbsqr']      = cmsCore::request('thumbsqr', 'int');
+        $album['cssprefix']     = cmsCore::request('cssprefix', 'str');
+        $album['nav']           = cmsCore::request('nav', 'int');
+        $album['uplimit']       = cmsCore::request('uplimit', 'int');
+        $album['maxcols']       = cmsCore::request('maxcols', 'int');
+        $album['orderform']     = cmsCore::request('orderform', 'int');
+        $album['showtags']      = cmsCore::request('showtags', 'int');
+        $album['bbcode']        = cmsCore::request('bbcode', 'int');
 
-            $album['meta_keys']     = cmsCore::request('meta_keys', 'str', '');
-            $album['meta_desc']     = cmsCore::request('meta_desc', 'str', '');
-            $album['pagetitle']     = cmsCore::request('pagetitle', 'str', '');
+        $album['meta_keys']     = cmsCore::request('meta_keys', 'str', '');
+        $album['meta_desc']     = cmsCore::request('meta_desc', 'str', '');
+        $album['pagetitle']     = cmsCore::request('pagetitle', 'str', '');
         }
 
         $album['iconurl']       = cmsCore::request('iconurl', 'str');
 
         // если сменили категорию
         if(!$is_club) {
-            if ($old_album['parent_id'] != $album['parent_id']) {
-                // перемещаем ее в дереве
-                $inCore->nestedSetsInit('cms_photo_albums')->MoveNode($item_id, $album['parent_id']);
-            }
+        if($old_album['parent_id'] != $album['parent_id']){
+            // перемещаем ее в дереве
+            $inCore->nestedSetsInit('cms_photo_albums')->MoveNode($item_id, $album['parent_id']);
+        }
         }
 
         $inDB->update('cms_photo_albums', $album, $item_id);
@@ -341,7 +341,7 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
         if($is_club){
             cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_albums_clubs');
         } else {
-            cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_albums');
+        cmsCore::redirect('?view=components&do=config&id='.$id.'&opt=list_albums');
         }
 
 	}
@@ -692,7 +692,6 @@ if(!defined('VALID_CMS_ADMIN')) { die('ACCESS DENIED'); }
         </p>
     </form>
 <?php	}
-
 	if ($opt == 'add_photo' || $opt == 'edit_photo'){
 
             $inPhoto = cmsPhoto::getInstance();	

@@ -7,9 +7,9 @@
 
         {add_js file='includes/fileuploader/fileuploader.js'}
 
-        {if $max_limit}
-            <p class="usr_photos_add_limit">{$LANG.YOU_CAN_UPLOAD} <strong>{$max_files}</strong> {$LANG.PHOTO_SHORT}</p>
-        {/if}
+    {if $max_limit}
+    <p class="usr_photos_add_limit">{$LANG.YOU_CAN_UPLOAD} <strong>{$max_files}</strong> {$LANG.PHOTO_SHORT}</p>
+    {/if}
 
         <div id="album-photos-widget">
 
@@ -18,7 +18,7 @@
             <div class="preview_template" style="display:none">
                 <div class="thumb">
                     <img class="img-thumbnail" src="" border="0" />
-                </div>
+        </div>
             </div>
 
             <div id="photos-uploader"></div>
@@ -36,11 +36,11 @@
             <a href="{$upload_complete_url}" id="continue">{$LANG.CONTINUE}</a>
         </div>
 
-        <p class="usr_photos_add_st">{$LANG.TEXT_TO_NO_FLASH} <a href="/users/addphotosingle.html">{$LANG.PHOTO_ST_UPLOAD}.</a></p>
-
-    {elseif $uload_type == 'single'}
+        <p class="text-danger">{$LANG.TEXT_TO_NO_FLASH} <a href="/users/addphotosingle.html">{$LANG.PHOTO_ST_UPLOAD}.</a></p>
+    
+{elseif $uload_type == 'single'}
         {if $max_limit}
-         <p class="usr_photos_add_limit">{$LANG.YOU_CAN_UPLOAD} <strong>{$max_files}</strong> {$LANG.PHOTO_SHORT}</p>
+         <p class="text-danger">{$LANG.YOU_CAN_UPLOAD} <strong>{$max_files}</strong> {$LANG.PHOTO_SHORT}</p>
         {/if}
 
         <form id="usr_photos_upload_form" enctype="multipart/form-data" action="/users/photos/upload" method="POST">
@@ -51,13 +51,13 @@
                 <strong>{$LANG.TYPE_FILE}:</strong> gif, jpg, jpeg, png
             </div>
 
-            <p>
+            <div>
                 <input type="submit" value="{$LANG.UPLOAD}">
                 <input type="button" onclick="window.history.go(-1);" value="{$LANG.CANCEL}"/>
-            </p>
+            </div>
         </form>
-		<p class="usr_photos_add_st">{$LANG.TEXT_TO_TO_FLASH} <a href="/users/addphoto.html">{$LANG.PHOTO_FL_UPLOAD}.</a></p>
+		<p class="text-danger">{$LANG.TEXT_TO_TO_FLASH} <a href="/users/addphoto.html">{$LANG.PHOTO_FL_UPLOAD}.</a></p>
     {/if}
 {else}
-<p class="usr_photos_add_limit">{$LANG.FOR_ADD_PHOTO_TEXT}</p>
+<p class="text-danger">{$LANG.FOR_ADD_PHOTO_TEXT}</p>
 {/if}

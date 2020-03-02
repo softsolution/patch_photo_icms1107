@@ -84,6 +84,8 @@ if ($do_photo == 'submit_photo'){
 
 ///////////////// фотографии загружены /////////////////////////////////////////
 if ($do_photo == 'uploaded'){
+
 	cmsUser::sessionDel('mod');
 	cmsCore::redirect('/photos/'.$album['id']);
+
 }

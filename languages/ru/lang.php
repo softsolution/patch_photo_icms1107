@@ -72,9 +72,12 @@ $_LANG['SELECT_CITY']               = 'Выберите город';
 $_LANG['NO']                        = 'Нет';
 $_LANG['YES']                       = 'Да';
 $_LANG['PHONE']                     = 'Телефон';
+$_LANG['SKYPE']                     = 'Skype';
+$_LANG['ICQ']                     	= 'ICQ';
 
 $_LANG['NEW_MESSAGES'] = 'новых сообщений';
 $_LANG['NEW_NOTICES']  = 'новых уведомлений';
+$_LANG['NO_MESSAGES'] = 'Новых сообщений нет';
 
 $_LANG['TAGS']     = 'Теги';
 $_LANG['TAG']      = 'Тег';
@@ -90,6 +93,7 @@ $_LANG['CURRENCY']       = 'руб.';
 
 $_LANG['TITLE']                  = 'Название';
 $_LANG['DESCRIPTION']            = 'Описание';
+$_LANG['CSSCLASS']       	     = 'CSS класс';
 $_LANG['IMAGE']                  = 'Изображение';
 $_LANG['EDIT_INFO']              = 'Для редактирования у Вас осталось {min}';
 $_LANG['ON_MODERATE']            = 'На модерации';

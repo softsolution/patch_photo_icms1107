@@ -43,7 +43,7 @@ function users(){
 	// js только авторизованным
 	if($inUser->id){
 		$inPage->addHeadJS('components/users/js/profile.js');
-        $inPage->addHeadJsLang(array('CONFIRM_CLEAN_CAT','CHOOSE_RECIPIENT','SEND_TO_USER','FRIENDSHIP_OFFER','STOP_FRIENDLY','REALY_STOP_FRIENDLY','ENTER_STATUS','HAVE_JUST'));
+        $inPage->addHeadJsLang(array('CONFIRM_CLEAN_CAT','CHOOSE_RECIPIENT','SEND_TO_USER','FRIENDSHIP_OFFER','STOP_FRIENDLY','REALY_STOP_FRIENDLY','ENTER_STATUS','HAVE_JUST', 'BLACK_LIST', 'BLACK_ADD_TO_USER', 'BLACK_DEL_TO_USER', 'BLACK_LIST_ADD_OFFER', 'BLACK_LIST_DEL_OFFER'));
 	}
 
 //============================================================================//
@@ -292,11 +292,19 @@ if ($do=='editprofile'){
         $profiles['signature_html'] = $inDB->escape_string(cmsCore::parseSmiles(cmsCore::request('signature', 'html', ''), true));
 		$profiles['allow_who']    = cmsCore::request('allow_who', 'str');
 		if (!preg_match('/^([a-zA-Z]+)$/ui', $profiles['allow_who'])) { $errors = true; }
-		$users['icq']             = cmsCore::request('icq', 'str', '');
-		$profiles['showicq']      = cmsCore::request('showicq', 'int');
+
+		// добавление контроля, чтобы вводились только цифры
+		$users['icq']		= preg_replace('/([^0-9])/ui', '', cmsCore::request('icq', 'str'));
+		// добавляем контроль для Skype
+		$users['skype']		= preg_replace('/([^a-z0-9\._\-])/ui', '', cmsCore::request('skype', 'str'));
+
+        $users['phone']		= cmsCore::request('phone', 'str');
+		
+		$profiles['showicq']	= cmsCore::request('showicq', 'int', 0);
+		$profiles['showskype']	= cmsCore::request('showskype', 'int', 0);
+		$profiles['showphone']	= cmsCore::request('showphone', 'int', 0);
 		$profiles['cm_subscribe'] = cmsCore::request('cm_subscribe', 'str');
 		if (!preg_match('/^([a-zA-Z]+)$/ui', $profiles['cm_subscribe'])) { $errors = true; }
-        $users['phone']           = cmsCore::request('phone', 'int', 0);
 
 		// получаем данные форм
 		$profiles['formsdata'] = '';
@@ -452,6 +460,12 @@ if ($do=='profile'){
         }
     }
 
+    $usr['is_blacklist'] = $model->getIsUserBlackList($inUser->id, $usr['id']);
+    if(!$inUser->is_admin) {
+        $usr['is_user_blacklist'] = $model->getIsUserBlackList($usr['id'], $inUser->id);
+    }
+    
+
     $plugins = $model->getPluginsOutput($usr);
 
     cmsPage::initTemplate('components', 'com_users_profile.tpl')->
@@ -495,6 +509,18 @@ if ($do=='sendmessage'){
 
     if($_SERVER['HTTP_X_REQUESTED_WITH'] != 'XMLHttpRequest') { cmsCore::halt(); }
 
+    if(!$inUser->is_admin) {
+        $is_user_blacklist = $model->getIsUserBlackList($id, $inUser->id);
+    }
+    if($is_user_blacklist) {
+        $html =  $_LANG['BLACK_LIST_USER'];
+        
+		cmsCore::jsonOutput(array('error' => false,
+								  'html'  => $html
+								));
+    }
+
+    
 	if (!$inUser->id || ($inUser->id==$id &&
 							!cmsCore::inRequest('massmail') &&
 							!cmsCore::request('send_to_group', 'int', 0))){ cmsCore::halt(); }
@@ -792,7 +818,7 @@ if ($do=='select_avatar'){
 			$uploadavatar = $uploaddir . $filename;
 			$uploadthumb  = $uploaddir . 'small/' . $filename;
 
-			if ($inUser->orig_imageurl && $inUser->orig_imageurl != 'nopic.jpg'){
+			if ($inUser->orig_imageurl && $inUser->orig_imageurl != 'nopic.png'){
 				@unlink(PATH.'/images/users/avatars/'.$inUser->orig_imageurl);
 				@unlink(PATH.'/images/users/avatars/small/'.$inUser->orig_imageurl);
 			}
@@ -1257,6 +1283,56 @@ if ($do=='change_email'){
     cmsCore::redirect(cmsUser::getProfileURL($inUser->login));
 
 }
+//============================================================================//
+//============================= Чёрный список  ===============================//
+//============================================================================//
+if ($do=='blacklist'){
+
+	$usr = cmsUser::getShortUserData($id);
+	if (!$usr) { cmsCore::error404(); }
+        
+        if($inUser->id != $usr['id']  && !$inUser->is_admin) {
+            cmsCore::error404();
+        }
+        
+	$inPage->setTitle($_LANG['BLACK_LIST']);
+	$inPage->addPathway($usr['nickname'], cmsUser::getProfileURL($usr['login']));
+	$inPage->addPathway($_LANG['BLACK_LIST']);
+        
+        $from_id = cmsCore::request('user_id', 'str', '');
+        
+        if(cmsCore::inRequest('user_id') && $from_id != $usr['id']) {
+            
+            $response = array();
+            
+            $from_user = cmsUser::getShortUserData(intval($from_id));
+            if(!$from_user) {
+                cmsCore::error404();
+            }
+            
+            $is_add = $model->getIsUserBlackList($usr['id'], $from_id);
+            if($is_add) {
+                $inDB->delete('cms_user_blacklist', "id = '{$is_add['id']}'");
+                $response['active'] = 'add_blacklist';
+            } else {
+                $model->addUserBlackList($usr['id'], $from_id);
+                $response['active'] = 'del_blacklist';
+            }
+            
+            cmsCore::jsonOutput($response);
+            
+        }
+        
+        
+
+	cmsPage::initTemplate('components', 'com_users_blacklist')->
+            assign('items', $model->getUserBlackList($usr['id']))->
+            assign('usr', $usr)->
+            display('com_users_blacklist.tpl');
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /* ========================================================================== */
 /* ========================= ЗАГРУЗКА ФОТО ================================== */
